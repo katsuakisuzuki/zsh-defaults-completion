@@ -1,0 +1,42 @@
+#compdef defaults
+
+# 引数処理
+_arguments -C \
+  '1:command:(read write delete domains find export import help)' \
+  '2:domain:_defaults_domains' \
+  '3:argument:_defaults_arguments' \
+  '*::args:->args'
+
+# ドメイン補完（例: com.apple.finder）
+_defaults_domains() {
+  defaults domains | tr ',' '\n' | sed 's/^[[:space:]]*//' | sort -u
+}
+
+# コマンドごとの補完ロジック
+_defaults_arguments() {
+  local curcontext="$curcontext" state line
+  local -a args
+  local cmd=${words[1]}
+  local domain=${words[2]}
+
+  case $cmd in
+    read|delete)
+      if [[ -n $domain ]]; then
+        args=(${(f)"$(defaults read "$domain" 2>/dev/null | grep ' = ' | cut -d= -f1 | sed 's/^[[:space:]]*//')"})
+        _describe 'keys' args
+      fi
+      ;;
+    write)
+      _message 'Enter key followed by type and value (e.g., key -string value)'
+      ;;
+    export)
+      _files -g '*.plist'
+      ;;
+    import)
+      _files -g '*.plist'
+      ;;
+    *)
+      _message 'No additional arguments'
+      ;;
+  esac
+}
